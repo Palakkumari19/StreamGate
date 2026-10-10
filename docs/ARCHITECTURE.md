@@ -184,15 +184,15 @@ sequenceDiagram
 ```mermaid
 sequenceDiagram
     autonumber
+    participant C as Client
     participant G as Gateway/Dispatcher
     participant B1 as backend-a
     participant B2 as backend-b
-    participant C as Client
 
     G->>B1: POST (attempt 1)
-    B1--xG: connect error / 503 / timeout before first byte
-    G->>G: breaker[a].on_failure(); classify as retryable
-    G->>G: sleep(backoff with full jitter)
+    B1--xG: connect error, 503, or timeout before first byte
+    G->>G: breaker a on_failure, classify as retryable
+    G->>G: sleep with full-jitter backoff
     G->>B2: POST (attempt 2), strategy re-picks excluding a
     B2-->>G: 200 + first chunk
     G-->>C: 200, SSE begins
@@ -204,15 +204,15 @@ sequenceDiagram
 ```mermaid
 sequenceDiagram
     autonumber
+    participant C as Client
     participant G as Gateway
     participant B1 as backend-a
-    participant C as Client
 
-    G-->>C: data: {delta:"The capital"}
+    G-->>C: data: delta "The capital"
     B1--xG: connection reset mid-stream
-    G->>G: breaker[a].on_failure(); mark usage truncated
-    G-->>C: data: {"error":{"type":"upstream_error","code":"stream_interrupted"}}
-    G-->>C: data: [DONE]
+    G->>G: breaker a on_failure, mark usage truncated
+    G-->>C: data: error upstream_error / stream_interrupted
+    G-->>C: data: DONE
     Note over G,C: NO retry. Retrying would append a second,<br/>contradictory continuation to text already delivered.
 ```
 
